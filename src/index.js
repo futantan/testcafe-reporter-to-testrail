@@ -51,11 +51,9 @@ module.exports = function () {
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
-      if (this.EnableTestrail) {
-        if (!this.ProjectName || !this.TestrailHost || !this.TestrailPass || !this.TestrailUser) {
-          this.newline().write(this.chalk.red.bold('Error:  TESTRAIL_HOST, TESTRAIL_USER, TESTRAIL_PASS and PROJECT_NAME must be set as environment variables for the reporter plugin to push the result to the Testrail'));
-          process.exit(1);
-        }
+      if (this.EnableTestrail && (!this.ProjectName || !this.TestrailHost || !this.TestrailPass || !this.TestrailUser)) {
+        this.newline().write(this.chalk.red.bold('Error:  TESTRAIL_HOST, TESTRAIL_USER, TESTRAIL_PASS and PROJECT_NAME must be set as environment variables for the reporter plugin to push the result to the Testrail'));
+        process.exit(1);
       }
 
       this.PlanName = process.env.PLAN_NAME || 'TestAutomation_1';
