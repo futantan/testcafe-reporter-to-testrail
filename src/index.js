@@ -72,19 +72,21 @@ module.exports = function () {
       const result = hasErr ? this.chalk.red('Failed') : this.chalk.green('Passed');
 
       this.write(result + ' ' + this.currentFixtureName + ' - ' + name).newline();
-      const testOutput = {};
 
       this.testStartTime = new Date(); // set net test start time
 
+      const testOutput = {};
       testOutput[0] = this.currentFixtureName;
       testOutput[1] = name;
       testOutput[2] = testRunInfo.skipped ? 'Skipped' : hasErr ? 'Failed' : 'Passed';
       testOutput[3] = this.moment.duration(testRunInfo.durationMs).format('h[h] mm[m] ss[s]');
-      var error = {};
 
-      if (testRunInfo.skipped) this.skipped++;
+      if (testRunInfo.skipped) {
+        this.skipped++;
+      }
 
-      if (hasErr > 0) {
+      if (hasErr) {
+        const error = {};
         error[0] = this.currentFixtureName;
         error[1] = name;
         error[2] = '';
@@ -97,10 +99,8 @@ module.exports = function () {
           // eslint-disable-next-line
           testOutput[4] += _this.formatError(err, idx + 1 + ') ').replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
         });
-
         this.errorTestData.push(error);
       }
-
       this.testResult.push(testOutput);
     },
 
