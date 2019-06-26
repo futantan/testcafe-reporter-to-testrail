@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.3.4",
+    "bluebird": "^3.5.5",
     "request": "^2.88.0"
   }
 }
