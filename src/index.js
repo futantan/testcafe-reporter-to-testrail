@@ -75,13 +75,10 @@ module.exports = function () {
       const testOutput = {};
 
       this.testStartTime = new Date(); // set net test start time
-      var testStatus = '';
-
-      if (testRunInfo.skipped) testStatus = 'Skipped'; else if (hasErr === 0) testStatus = 'Passed'; else testStatus = 'Failed';
 
       testOutput[0] = this.currentFixtureName;
       testOutput[1] = name;
-      testOutput[2] = testStatus;
+      testOutput[2] = testRunInfo.skipped ? 'Skipped' : hasErr ? 'Failed' : 'Passed';
       testOutput[3] = this.moment.duration(testRunInfo.durationMs).format('h[h] mm[m] ss[s]');
       var error = {};
 

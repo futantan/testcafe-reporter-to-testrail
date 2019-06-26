@@ -49,7 +49,6 @@
     "newline-after-var": [2, "always"],
     "no-lonely-if": 2,
     "no-multiple-empty-lines":  [2, { "max": 2 }],
-    "no-nested-ternary": 2,
     "no-underscore-dangle": 0,
     "no-unneeded-ternary": 2,
     "object-curly-spacing": [2, "always"],
