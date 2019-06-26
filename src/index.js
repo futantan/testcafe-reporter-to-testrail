@@ -61,23 +61,18 @@ module.exports = function () {
     },
 
     reportFixtureStart: function reportFixtureStart (name) {
-
       this.currentFixtureName = name;
     },
 
     reportTestDone: function reportTestDone (name, testRunInfo) {
-      var _this = this;
+      const _this = this;
 
       this.testEndTime = new Date(); // set test end time
-      var hasErr = testRunInfo.errs.length;
-      var result = hasErr === 0 ? this.chalk.green('Passed') : this.chalk.red('Failed');
+      const hasErr = testRunInfo.errs.length;
+      const result = hasErr ? this.chalk.red('Failed') : this.chalk.green('Passed');
 
-      var namef = this.currentFixtureName + ' - ' + name;
-
-      var title = result + ' ' + namef;
-
-      this.write(title).newline();
-      var testOutput = {};
+      this.write(result + ' ' + this.currentFixtureName + ' - ' + name).newline();
+      const testOutput = {};
 
       this.testStartTime = new Date(); // set net test start time
       var testStatus = '';
