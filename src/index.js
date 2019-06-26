@@ -105,33 +105,27 @@ module.exports = function () {
     },
 
     reportTaskDone: function reportTaskDone (endTime, passed) {
-      var durationMs = endTime - this.startTime;
+      this.totalTaskTime = this.moment.duration(endTime - this.startTime).format('h[h] mm[m] ss[s]');
 
-      var durationStr = this.moment.duration(durationMs).format('h[h] mm[m] ss[s]');
-
-      this.totalTaskTime = durationStr;
-      var footer = passed === this.testCount ? this.testCount + ' Passed' : this.testCount - passed + '/' + this.testCount + ' Failed';
-
-      footer += ' (Duration: ' + durationStr + ')';
-
-      if (this.skipped > 0)
+      if (this.skipped > 0) {
         this.write(this.chalk.cyan(this.skipped + ' Skipped')).newline();
-
+      }
 
       this.passed = passed;
       this.failed = this.testCount - passed;
 
+      const footer = (passed === this.testCount ? this.testCount + ' Passed' : this.testCount - passed + '/' + this.testCount + ' Failed')
+        + ' (Duration: ' + this.totalTaskTime + ')';
       this.write(footer).newline();
 
-      var d = new Date();
-
-      this.creationDate = d.getDate() + '_' + (d.getMonth() + 1) + '_' + d.getFullYear() + '_' + d.getHours() + '_' + d.getMinutes() + '_' + d.getSeconds();
+      const d = new Date();
+      this.creationDate = [d.getDate(), d.getMonth() + 1, d.getFullYear(), d.getHours(), d.getMinutes(), d.getSeconds()].join('_');
 
       this.generateReport();
 
-      if (this.EnableTestrail)
+      if (this.EnableTestrail) {
         this.publishResultToTestrail();
-
+      }
     },
 
     _renderErrors: function _renderErrors (errs) {
@@ -313,7 +307,10 @@ module.exports = function () {
     addNewPlan: function addNewPlan (api) {
       var _this6 = this;
 
-      api.addPlan(this.ProjectID, { name: this.PlanName, desription: 'Added From Automation reporter plugin' }, function (err, response, plan) {
+      api.addPlan(this.ProjectID, {
+        name:       this.PlanName,
+        desription: 'Added From Automation reporter plugin'
+      }, function (err, response, plan) {
         if (err !== 'null') {
           if (typeof plan.id === 'undefined') {
             _this6.newline().write(_this6.chalk.red('Plan Id found as undefined'));
