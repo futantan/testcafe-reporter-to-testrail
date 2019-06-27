@@ -151,8 +151,8 @@ module.exports = function () {
 
       for (const testResultItem of this.testResult) {
         // eslint-disable-next-line
-        var testDesc = testResultItem[1].split('\|'); // split the Test Description
-        var caseID = null;
+        const testDesc = testResultItem[1].split('\|'); // split the Test Description
+        let caseID = null;
 
         if (typeof testDesc[2] === 'undefined') {
           // verify that Case_ID  of test is present or not
@@ -168,8 +168,8 @@ module.exports = function () {
           continue;
         }
 
-        var _status = testResultItem[2];
-        var comment = null;
+        let _status = testResultItem[2];
+        let comment = null;
 
         if (_status === 'Skipped') {
           _status = 6;
@@ -184,8 +184,7 @@ module.exports = function () {
           comment = testResultItem[4]; // if error found for the Test, It will populated in the comment
         }
 
-        var Testresult = {};
-
+        const Testresult = {};
         Testresult['case_id'] = caseID.trim();
         Testresult['status_id'] = _status;
         Testresult['comment'] = comment;
@@ -198,38 +197,31 @@ module.exports = function () {
         return;
       }
 
-      var api = new TestRail({
+      const api = new TestRail({
         host:     this.TestrailHost,
         user:     this.TestrailUser,
         password: this.TestrailPass
       });
 
       this.getProject(api);
-
       if (this.ProjectID === 0) return;
 
       this.getPlanID(api);
-
       if (this.PlanID === 0) return;
 
       this.getSuiteID(api);
-
       if (this.SuiteID === 0) return;
 
-      var AgentDetails = this.agents[0].split('/');
-      var rundetails = {
+      const AgentDetails = this.agents[0].split('/');
+      const rundetails = {
         'suite_id':    this.SuiteID,
         'include_all': false,
         'case_ids':    caseidList,
         'name':        'Run_' + this.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'
-
       };
-
-      var runId = null;
-      var result = null;
-
+      let runId = null;
+      let result = null;
       api.addPlanEntry(this.PlanID, rundetails, function (err, response, run) {
-
         if (err !== 'null') {
           runId = run.runs[0].id;
           that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Run added successfully.')).newline().write(that.chalk.blue.bold('Run name   ')).write(that.chalk.yellow('Run_' + that.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'));
@@ -239,18 +231,17 @@ module.exports = function () {
           };
 
           api.addResultsForCases(runId, result, function (err1, response1, results) {
-            if (err1 === 'null')
+            if (err1 === 'null') {
               that.newline().write(that.chalk.blue('---------Error at Add result -----')).newline().write(err1);
-            else if (results.length === 0)
+            } else if (results.length === 0) {
               that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
-            else
+            } else {
               that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Result added to the testrail Successfully'));
-
+            }
           });
-        }
-        else
+        } else {
           that.newline().write(that.chalk.blue('-------------Error at AddPlanEntry ----------------')).newline().write(err);
-
+        }
       });
     },
 
