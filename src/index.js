@@ -211,6 +211,7 @@ module.exports = function () {
 
       this.getSuiteID(api);
       if (this.SuiteID === 0) return;
+      caseidList.forEach(id => updateCaseTypeToAutomatedIfNecessary(api, id));
 
       const AgentDetails = this.agents[0].split('/');
       const rundetails = {
@@ -407,3 +408,17 @@ module.exports = function () {
     }
   };
 };
+
+const TYPE_AUTOMATED = 3;
+function updateCaseTypeToAutomatedIfNecessary (api, caseId) {
+  api.getCase(caseId, (err, response, caseObj) => {
+    if (err) { return; }
+    if (caseObj.type_id !== TYPE_AUTOMATED) {
+      updateCaseTypeToAutomated();
+    }
+  });
+
+  function updateCaseTypeToAutomated () {
+    api.updateCase(caseId, { type_id: TYPE_AUTOMATED }, () => {});
+  }
+}
