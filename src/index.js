@@ -129,14 +129,11 @@ module.exports = function () {
     },
 
     _renderErrors: function _renderErrors (errs) {
-      var _this2 = this;
-
+      const that = this;
       this.setIndent(3).newline();
-
       errs.forEach(function (err, idx) {
-        var prefix = _this2.chalk.red(idx + 1 + ') ');
-
-        _this2.newline().write(_this2.formatError(err, prefix)).newline().newline();
+        const prefix = that.chalk.red(idx + 1 + ') ');
+        that.newline().write(that.formatError(err, prefix)).newline().newline();
       });
     },
 
