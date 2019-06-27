@@ -149,14 +149,14 @@ module.exports = function () {
         .newline()
         .write(this.chalk.green('Publishing the result to testrail...'));
 
-      for (const index in this.testResult) {
+      for (const testResultItem of this.testResult) {
         // eslint-disable-next-line
-        var testDesc = this.testResult[index][1].split('\|'); // split the Test Description
+        var testDesc = testResultItem[1].split('\|'); // split the Test Description
         var caseID = null;
 
         if (typeof testDesc[2] === 'undefined') {
           // verify that Case_ID  of test is present or not
-          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Warning:  Test: ' + this.testResult[index][1] + ' missing the Testrail ID');
+          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Warning:  Test: ' + testResultItem[1] + ' missing the Testrail ID');
           continue;
         }
 
@@ -164,11 +164,11 @@ module.exports = function () {
 
         //to check that caseID is valid ID using isnumber function
         if (isNaN(caseID)) {
-          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Warning:  Test: ' + this.testResult[index][1] + ' contains invalid Test rail Case id');
+          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Warning:  Test: ' + testResultItem[1] + ' contains invalid Test rail Case id');
           continue;
         }
 
-        var _status = this.testResult[index][2];
+        var _status = testResultItem[2];
         var comment = null;
 
         if (_status === 'Skipped') {
@@ -181,7 +181,7 @@ module.exports = function () {
         }
         else {
           _status = 5;
-          comment = this.testResult[index][4]; // if error found for the Test, It will populated in the comment
+          comment = testResultItem[4]; // if error found for the Test, It will populated in the comment
         }
 
         var Testresult = {};
