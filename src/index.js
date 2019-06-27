@@ -30,7 +30,7 @@ module.exports = function () {
     TestrailHost:       null,
     ConfigID:           [],
 
-    reportTaskStart: function reportTaskStart (startTime, userAgents, testCount) {
+    async reportTaskStart (startTime, userAgents, testCount) {
       this.startTime = new Date(); // set first test start time
 
       this.testCount = testCount;
@@ -60,11 +60,11 @@ module.exports = function () {
       this.PlanName = process.env.PLAN_NAME || 'TestAutomation_1';
     },
 
-    reportFixtureStart: function reportFixtureStart (name) {
+    async reportFixtureStart (name) {
       this.currentFixtureName = name;
     },
 
-    reportTestDone: function reportTestDone (name, testRunInfo) {
+    async reportTestDone (name, testRunInfo) {
       const _this = this;
 
       this.testEndTime = new Date(); // set test end time
@@ -104,7 +104,7 @@ module.exports = function () {
       this.testResult.push(testOutput);
     },
 
-    reportTaskDone: function reportTaskDone (endTime, passed) {
+    async reportTaskDone (endTime, passed) {
       this.totalTaskTime = this.moment.duration(endTime - this.startTime).format('h[h] mm[m] ss[s]');
 
       if (this.skipped > 0) {
