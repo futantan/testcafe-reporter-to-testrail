@@ -138,14 +138,18 @@ module.exports = function () {
     },
 
     publishResultToTestrail: function publishResultToTestrail () {
-      var _this3 = this;
+      const that = this;
 
-      var resultsTestcases = [];
-      var caseidList = [];
+      const resultsTestcases = [];
+      const caseidList = [];
 
-      this.newline().newline().write('------------------------------------------------------').newline().write(this.chalk.green('Publishing the result to testrail...'));
+      this.newline()
+        .newline()
+        .write('------------------------------------------------------')
+        .newline()
+        .write(this.chalk.green('Publishing the result to testrail...'));
 
-      for (var index in this.testResult) {
+      for (const index in this.testResult) {
         // eslint-disable-next-line
         var testDesc = this.testResult[index][1].split('\|'); // split the Test Description
         var caseID = null;
@@ -228,7 +232,7 @@ module.exports = function () {
 
         if (err !== 'null') {
           runId = run.runs[0].id;
-          _this3.newline().write('------------------------------------------------------').newline().write(_this3.chalk.green('Run added successfully.')).newline().write(_this3.chalk.blue.bold('Run name   ')).write(_this3.chalk.yellow('Run_' + _this3.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'));
+          that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Run added successfully.')).newline().write(that.chalk.blue.bold('Run name   ')).write(that.chalk.yellow('Run_' + that.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'));
 
           result = {
             results: resultsTestcases
@@ -236,16 +240,16 @@ module.exports = function () {
 
           api.addResultsForCases(runId, result, function (err1, response1, results) {
             if (err1 === 'null')
-              _this3.newline().write(_this3.chalk.blue('---------Error at Add result -----')).newline().write(err1);
+              that.newline().write(that.chalk.blue('---------Error at Add result -----')).newline().write(err1);
             else if (results.length === 0)
-              _this3.newline().write(_this3.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
+              that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
             else
-              _this3.newline().write('------------------------------------------------------').newline().write(_this3.chalk.green('Result added to the testrail Successfully'));
+              that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Result added to the testrail Successfully'));
 
           });
         }
         else
-          _this3.newline().write(_this3.chalk.blue('-------------Error at AddPlanEntry ----------------')).newline().write(err);
+          that.newline().write(that.chalk.blue('-------------Error at AddPlanEntry ----------------')).newline().write(err);
 
       });
     },
