@@ -246,23 +246,20 @@ module.exports = function () {
     },
 
     getProject: function getProject (api) {
-      var _this4 = this;
+      const that = this;
 
       api.getProjects(function (err, response, project) {
         if (err !== 'null' && typeof project !== 'undefined') {
-
-          project.forEach(function (aProject) {
-            if (aProject.name === String(_this4.ProjectName)) {
-              _this4.ProjectID = aProject.id;
-              _this4.newline().write(_this4.chalk.blue.bold('Project name(id) ')).write(_this4.chalk.yellow(_this4.ProjectName + '(' + aProject.id + ')'));
+          project.forEach(aProject => {
+            if (aProject.name === String(that.ProjectName)) {
+              that.ProjectID = aProject.id;
+              that.newline().write(that.chalk.blue.bold('Project name(id) ')).write(that.chalk.yellow(that.ProjectName + '(' + aProject.id + ')'));
             }
           });
-        }
-        else {
-          _this4.newline().write(_this4.chalk.blue('-------------Error at Get Projects  ----------------')).newline();
+        } else {
+          that.newline().write(that.chalk.blue('-------------Error at Get Projects  ----------------')).newline();
           console.log(err);
-
-          _this4.ProjectID = 0;
+          that.ProjectID = 0;
         }
       });
     },
