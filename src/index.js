@@ -314,27 +314,22 @@ module.exports = function () {
     },
 
     getSuiteID: function getSuiteID (api) {
-      var _this7 = this;
+      const that = this;
 
       return api.getSuites(this.ProjectID, function (err, response, suites) {
         if (err !== 'null') {
-
           if (suites.length === 0) {
-            _this7.newline().write(_this7.chalk.red('The project doesnt contain any suite'));
-            _this7.SuiteID = 0;
+            that.newline().write(that.chalk.red('The project doesnt contain any suite'));
+            that.SuiteID = 0;
+          } else {
+            const id = suites[0].id;
+            that.newline().write(that.chalk.blue.bold('Suite name(id) ')).write(that.chalk.yellow(suites[0].name + '(' + id + ')'));
+            that.SuiteID = id;
           }
-          else {
-
-            var id = suites[0].id;
-
-            _this7.newline().write(_this7.chalk.blue.bold('Suite name(id) ')).write(_this7.chalk.yellow(suites[0].name + '(' + id + ')'));
-            _this7.SuiteID = id;
-          }
-        }
-        else {
-          _this7.newline().write(_this7.chalk.blue('-------------Error at Get Suites  ----------------')).newline();
+        } else {
+          that.newline().write(that.chalk.blue('-------------Error at Get Suites  ----------------')).newline();
           console.log(err);
-          _this7.SuiteID = 0;
+          that.SuiteID = 0;
         }
       });
     },
