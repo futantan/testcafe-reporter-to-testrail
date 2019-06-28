@@ -211,7 +211,7 @@ module.exports = function () {
 
       this.getSuiteID(api);
       if (this.SuiteID === 0) return;
-      caseidList.forEach(id => updateCaseTypeToAutomatedIfNecessary(api, id));
+      caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
 
       const AgentDetails = this.agents[0].split('/');
       const rundetails = {
@@ -335,7 +335,6 @@ module.exports = function () {
     },
 
     generateReport: function generateReport () {
-
       this.output += '<!DOCTYPE html>\n\t\t\t\t\t\t\t<html>\n                            <head>\n                            <title>TestCafe HTML Report</title>\n                            <script src=\'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js\'></script>\n                            <meta name=\'viewport\' content=\'width=device-width, initial-scale=1\'>\n                            <link rel=\'stylesheet\' href=\'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\'>\n                            <script src=\'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\'></script>\n                            <script>\n                            var config = {             type: \'pie\',             data: {                 datasets: [{                     data: [                         \'' + this.passed + '\',\'' + this.failed + '\'                     ],                     backgroundColor: [                         \'Green\',                         \'Red\'                     ]                 }],                 labels: [                     \'Pass\',                     \'Failed\'                 ]             },             options: {                 responsive: true             }         };          window.onload = function() {             var ctx = document.getElementById(\'myChart\').getContext(\'2d\');             window.myPie = new Chart(ctx, config);         }; \n                            </script>\n                            </head>\n                            <body>\n                            <div class=\'container-fluid\'>\n                                <div class="row">\n                            <div class="col-sm-8">\n                                  <div>\n                                  <canvas id=\'myChart\' height=\'80\' ></canvas>\n                                  </div>\n                            </div>\n                            <div class="col-sm-2" style=" padding-top:80px">\n                                <table class=\'table table-bordered\' >\n                                <tr>\n                                    <td><b>Passed</b></td>\n                                    <td> ' + this.passed + ' </td>\n                                </tr>\n                                <tr>\n                                    <td> <b>Failed </b></td>\n                                    <td> ' + this.failed + ' </td>\n                                </tr>\n                                <tr>\n                                    <td> <b>Skipped </b></td>\n                                    <td> ' + this.skipped + ' </td>\n                                </tr>\n                                <tr class=\'info\'>\n                                    <td> <b>Total </b></td>\n                                    <td> ' + (this.testCount + this.skipped) + ' </td>\n                                </tr>\n                                </table>\n                            </div>\n                          </div>\n                            <hr/>\n                            \n                            \n                            <h4>Running tests in: <b>' + this.agents + '</b>                      <span> Total Time: ' + this.totalTaskTime + '</span></h4>\n                            <hr/><br/>\n                                <h3 style=\'font-color:red\'> Test details</h3>\n                                <table class=\'table table-bordered table-hover\'>\n                                <thead>\n                                <tr>\n                                    <th> Fixture Name </th>\n                                    <th> Test Name </th>\n                                    <th> Status </th>\n                                    <th> Time </th>\n                                </tr> </thead><tbody>';
 
       for (var index in this.testResult) {
@@ -396,17 +395,3 @@ module.exports = function () {
     }
   };
 };
-
-const TYPE_AUTOMATED = 3;
-function updateCaseTypeToAutomatedIfNecessary (api, caseId) {
-  api.getCase(caseId, (err, response, caseObj) => {
-    if (err) { return; }
-    if (caseObj.type_id !== TYPE_AUTOMATED) {
-      updateCaseTypeToAutomated();
-    }
-  });
-
-  function updateCaseTypeToAutomated () {
-    api.updateCase(caseId, { type_id: TYPE_AUTOMATED }, () => {});
-  }
-}

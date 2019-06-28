@@ -12,6 +12,23 @@ function TestRail (options) {
   this.uri = '/index.php?/api/v2/';
 }
 
+
+/////////////////////// Customise begin//////////////////////////////////
+const TYPE_AUTOMATED = 3;
+TestRail.prototype.updateCaseTypeToAutomatedIfNecessary = function (caseId) {
+  const updateCaseTypeToAutomated = () => {
+    this.updateCase(caseId, { type_id: TYPE_AUTOMATED }, () => {});
+  };
+
+  this.getCase(caseId, (err, response, caseObj) => {
+    if (err) { return; }
+    if (caseObj.type_id !== TYPE_AUTOMATED) {
+      updateCaseTypeToAutomated();
+    }
+  });
+};
+/////////////////////// Customise end  //////////////////////////////////
+
 TestRail.prototype.apiGet = function (apiMethod, queryVariables, callback) {
   var url = this.host + this.uri + apiMethod;
 
