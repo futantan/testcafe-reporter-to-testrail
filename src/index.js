@@ -289,8 +289,9 @@ module.exports = function () {
         }
       });
     },
+
     addNewPlan: function addNewPlan (api) {
-      var _this6 = this;
+      const that = this;
 
       api.addPlan(this.ProjectID, {
         name:       this.PlanName,
@@ -298,19 +299,16 @@ module.exports = function () {
       }, function (err, response, plan) {
         if (err !== 'null') {
           if (typeof plan.id === 'undefined') {
-            _this6.newline().write(_this6.chalk.red('Plan Id found as undefined'));
-            _this6.PlanID = 0;
+            that.newline().write(that.chalk.red('Plan Id found as undefined'));
+            that.PlanID = 0;
+          } else {
+            that.newline().write(that.chalk.green('New Plan is created')).newline().write(that.chalk.blue.bold('Plan name(id) ')).write(that.chalk.yellow(plan.name + '(' + plan.id + ')'));
+            that.PlanID = plan.id;
           }
-          else {
-            _this6.newline().write(_this6.chalk.green('New Plan is created')).newline().write(_this6.chalk.blue.bold('Plan name(id) ')).write(_this6.chalk.yellow(plan.name + '(' + plan.id + ')'));
-            _this6.PlanID = plan.id;
-          }
-        }
-        else {
-          _this6.newline().write(_this6.chalk.blue('-------------Error at Add New Plan  ----------------')).newline();
+        } else {
+          that.newline().write(that.chalk.blue('-------------Error at Add New Plan  ----------------')).newline();
           console.log(err);
-
-          _this6.PlanID = 0;
+          that.PlanID = 0;
         }
       });
     },
