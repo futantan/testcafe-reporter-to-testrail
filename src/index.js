@@ -266,31 +266,26 @@ module.exports = function () {
     },
 
     getPlanID: function getPlanID (api) {
-      var _this5 = this;
-
-      api.getPlans(this.ProjectID, function (err, response, plan) {
-        var planid = '';
-
+      const that = this;
+      api.getPlans(this.ProjectID, function (err, response, plans) {
+        let planId = '';
         if (err !== 'null') {
-
-          for (var index in plan) {
-            if (plan[index].name === _this5.PlanName) {
-              _this5.newline().write(_this5.chalk.blue.bold('Plan name(id) ')).write(_this5.chalk.yellow(plan[index].name + '(' + plan[index].id + ')'));
-              planid = plan[index].id;
+          for (const index in plans) {
+            if (plans[index].name === that.PlanName) {
+              that.newline().write(that.chalk.blue.bold('Plan name(id) ')).write(that.chalk.yellow(plans[index].name + '(' + plans[index].id + ')'));
+              planId = plans[index].id;
               break;
             }
           }
-
-          if (planid === '')
-            _this5.addNewPlan(api);
-          else
-            _this5.PlanID = planid;
-
-        }
-        else {
-          _this5.newline().write(_this5.chalk.blue('-------------Error at Get Plans  ----------------')).newline();
+          if (planId === '') {
+            that.addNewPlan(api);
+          } else {
+            that.PlanID = planId;
+          }
+        } else {
+          that.newline().write(that.chalk.blue('-------------Error at Get Plans  ----------------')).newline();
           console.log(err);
-          _this5.PlanID = 0;
+          that.PlanID = 0;
         }
       });
     },
