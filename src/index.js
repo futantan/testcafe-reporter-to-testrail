@@ -22,6 +22,7 @@ module.exports = function () {
     PlanName:           '',
     PlanID:             0,
     SuiteID:            0,
+    Sections:           [],
     EnableTestrail:     false,
     ProjectID:          0,
     ProjectName:        '',
@@ -142,7 +143,7 @@ module.exports = function () {
 
       const resultsTestcases = [];
       const caseidList = [];
-      const newCaseTitleList = [];
+      const newCaseList = [];
 
       this.newline()
         .newline()
@@ -156,7 +157,7 @@ module.exports = function () {
         let caseID = null;
 
         if (typeof testDesc[2] === 'undefined') {
-          newCaseTitleList.push(testDesc[1].trim());
+          newCaseList.push({ section: testDesc[0].trim(), title: testDesc[1].trim() });
           // verify that Case_ID  of test is present or not
           this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Warning:  Test: ' + testResultItem[1] + ' missing the Testrail ID');
           continue;
@@ -194,7 +195,7 @@ module.exports = function () {
         caseidList.push(caseID.trim());
       }
 
-      if (caseidList.length === 0) {
+      if (caseidList.length === 0 && newCaseList.length === 0) {
         this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test case data found to publish');
         return;
       }
@@ -215,15 +216,30 @@ module.exports = function () {
       if (this.SuiteID === 0) return;
 
       caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
-      newCaseTitleList.forEach(title => {
-        api.addCasesIfNotExisting(title, function (err, response, result) {
-          if (err === 'null') {
-            that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(title).newline().write(err);
-          } else {
-            that.newline().write(that.chalk.yellow('---------Add Test Case successfully-----')).write(title + '(' + result.id + ')').newline();
-          }
+
+      if (newCaseList.length > 0) {
+        this.getSections(api);
+        if (this.Sections.length === 0) return;
+
+        newCaseList.forEach(testCase => {
+          const projectId = this.ProjectID;
+          const suiteID = this.SuiteID;
+          api.addSectionIfNotExisting(projectId, suiteID, this.Sections, testCase.section, function (err1, response1, sectionResult) {
+            if (err1 !== null) {
+              that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
+            } else {
+              api.addCaseIfNotExisting(sectionResult.id, testCase.title, function (err2, response2, caseResult) {
+                const testCaseDesc = sectionResult.name + ' | ' + testCase.title;
+                if (err2 !== null) {
+                  that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(testCaseDesc).newline().write(err2);
+                } else {
+                  that.newline().write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(testCaseDesc + '(' + caseResult.id + ')')).newline();
+                }
+              });
+            }
+          });
         });
-      });
+      }
 
       const AgentDetails = this.agents[0].split('/');
       const rundetails = {
@@ -342,6 +358,18 @@ module.exports = function () {
           that.newline().write(that.chalk.blue('-------------Error at Get Suites  ----------------')).newline();
           console.log(err);
           that.SuiteID = 0;
+        }
+      });
+    },
+
+    getSections: function getSections (api) {
+      const that = this;
+
+      return api.getSections(this.ProjectID, { suite_id: this.SuiteID }, function (err, response, sections) {
+        if (err !== null) {
+          that.newline().write(that.chalk.blue('---------Error at Get Sections -----')).newline().write(err);
+        } else {
+          that.Sections = sections;
         }
       });
     },

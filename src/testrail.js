@@ -30,7 +30,16 @@ TestRail.prototype.updateCaseTypeToAutomatedIfNecessary = function (caseId) {
   });
 };
 
-TestRail.prototype.addCasesIfNotExisting = function (title, callback) {
+TestRail.prototype.addSectionIfNotExisting = function (projectId, suiteID, existingSections, section, callback) {
+  const existingSection = existingSections.filter(existing => existing.name === section)[0];
+
+  if (typeof existingSection === 'undefined') {
+    return this.addSection(projectId, { name: section, suite_id: suiteID }, callback);
+  }
+  return callback(null, existingSection, existingSection);
+};
+
+TestRail.prototype.addCaseIfNotExisting = function (sectionId, title, callback) {
   const caseData = {
     title,
     type_id:                TYPE_AUTOMATED,
@@ -46,7 +55,7 @@ TestRail.prototype.addCasesIfNotExisting = function (title, callback) {
         expected: 'Expected Result 2'
       }]
   };
-  return this.addCase(1, caseData, callback);
+  return this.addCase(sectionId, caseData, callback);
 };
 
 
@@ -426,7 +435,6 @@ TestRail.prototype.getSection = function (id, callback) {
 
 TestRail.prototype.getSections = function (projectId, filters, callback) {
   var uri = 'get_sections/' + projectId;
-
   if (typeof filters === 'function') {
     callback = filters;
     return this.apiGet(uri, callback);
