@@ -142,6 +142,7 @@ module.exports = function () {
 
       const resultsTestcases = [];
       const caseidList = [];
+      const newCaseTitleList = [];
 
       this.newline()
         .newline()
@@ -155,6 +156,7 @@ module.exports = function () {
         let caseID = null;
 
         if (typeof testDesc[2] === 'undefined') {
+          newCaseTitleList.push(testDesc[1].trim());
           // verify that Case_ID  of test is present or not
           this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Warning:  Test: ' + testResultItem[1] + ' missing the Testrail ID');
           continue;
@@ -211,7 +213,17 @@ module.exports = function () {
 
       this.getSuiteID(api);
       if (this.SuiteID === 0) return;
+
       caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
+      newCaseTitleList.forEach(title => {
+        api.addCasesIfNotExisting(title, function (err, response, result) {
+          if (err === 'null') {
+            that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(title).newline().write(err);
+          } else {
+            that.newline().write(that.chalk.yellow('---------Add Test Case successfully-----')).write(title + '(' + result.id + ')').newline();
+          }
+        });
+      });
 
       const AgentDetails = this.agents[0].split('/');
       const rundetails = {
