@@ -15,8 +15,7 @@ function TestRail (options) {
 
 /////////////////////// Customise begin//////////////////////////////////
 const TYPE_AUTOMATED = 3;
-const PRIORITY_MEDIUM = 2;
-const TEMPLATE_STEPS = 2;
+
 TestRail.prototype.updateCaseTypeToAutomatedIfNecessary = function (caseId) {
   const updateCaseTypeToAutomated = () => {
     this.updateCase(caseId, { type_id: TYPE_AUTOMATED }, () => {});
@@ -29,35 +28,6 @@ TestRail.prototype.updateCaseTypeToAutomatedIfNecessary = function (caseId) {
     }
   });
 };
-
-TestRail.prototype.addSectionIfNotExisting = function (projectId, suiteID, existingSections, section, callback) {
-  const existingSection = existingSections.filter(existing => existing.name === section)[0];
-
-  if (typeof existingSection === 'undefined') {
-    return this.addSection(projectId, { name: section, suite_id: suiteID }, callback);
-  }
-  return callback(null, existingSection, existingSection);
-};
-
-TestRail.prototype.addCaseIfNotExisting = function (sectionId, title, callback) {
-  const caseData = {
-    title,
-    type_id:                TYPE_AUTOMATED,
-    priority_id:            PRIORITY_MEDIUM,
-    template_id:            TEMPLATE_STEPS,
-    custom_steps_separated: [
-      {
-        content:  'Step 1',
-        expected: 'Expected Result 1'
-      },
-      {
-        content:  'Step 2',
-        expected: 'Expected Result 2'
-      }]
-  };
-  return this.addCase(sectionId, caseData, callback);
-};
-
 
 /////////////////////// Customise end  //////////////////////////////////
 

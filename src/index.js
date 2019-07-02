@@ -222,13 +222,21 @@ module.exports = function () {
         if (this.Sections.length === 0) return;
 
         newCaseList.forEach(testCase => {
-          const projectId = this.ProjectID;
-          const suiteID = this.SuiteID;
-          api.addSectionIfNotExisting(projectId, suiteID, this.Sections, testCase.section, function (err1, response1, sectionResult) {
+          that.addSectionIfNotExisting(api, this.Sections, testCase.section, function (err1, response1, sectionResult) {
             if (err1 !== null) {
               that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
             } else {
-              api.addCaseIfNotExisting(sectionResult.id, testCase.title, function (err2, response2, caseResult) {
+              const steps = [
+                {
+                  content:  'Step 1',
+                  expected: 'Expected Result 1'
+                },
+                {
+                  content:  'Step 2',
+                  expected: 'Expected Result 2'
+                }
+              ];
+              that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, steps, function (err2, response2, caseResult) {
                 const testCaseDesc = sectionResult.name + ' | ' + testCase.title;
                 if (err2 !== null) {
                   that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(testCaseDesc).newline().write(err2);
@@ -372,6 +380,37 @@ module.exports = function () {
           that.Sections = sections;
         }
       });
+    },
+
+    addSectionIfNotExisting: function addSectionIfNotExisting (api, existingSections, section, callback) {
+      const existingSection = existingSections.filter(existing => existing.name === section)[0];
+
+      if (typeof existingSection === 'undefined') {
+        return api.addSection(this.ProjectID, { suite_id: this.SuiteID, name: section }, callback);
+      }
+      return callback(null, existingSection, existingSection);
+    },
+
+    addCaseIfNotExisting: function addCaseIfNotExisting (api, sectionId, title, steps, callback) {
+      const TYPE_AUTOMATED = 3;
+      const PRIORITY_MEDIUM = 2;
+      const TEMPLATE_STEPS = 2;
+
+      return api.getCases(this.ProjectID, { suite_id: this.SuiteID, section_id: sectionId }, function (err, response, result) {
+        const existingTestCase = result.filter(testcase => testcase.title === title)[0];
+        if (typeof existingTestCase === 'undefined') {
+          const caseData = {
+            title,
+            type_id:                TYPE_AUTOMATED,
+            priority_id:            PRIORITY_MEDIUM,
+            template_id:            TEMPLATE_STEPS,
+            custom_steps_separated: steps
+          };
+          return api.addCase(sectionId, caseData, callback);
+        }
+        return callback(null, existingTestCase, existingTestCase);
+      });
+
     },
 
     generateReport: function generateReport () {
