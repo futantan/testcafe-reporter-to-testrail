@@ -392,18 +392,14 @@ module.exports = function () {
     },
 
     addCaseIfNotExisting: function addCaseIfNotExisting (api, sectionId, title, steps, callback) {
-      const TYPE_AUTOMATED = 3;
-      const PRIORITY_MEDIUM = 2;
-      const TEMPLATE_STEPS = 2;
-
       return api.getCases(this.ProjectID, { suite_id: this.SuiteID, section_id: sectionId }, function (err, response, result) {
         const existingTestCase = result.filter(testcase => testcase.title === title)[0];
         if (typeof existingTestCase === 'undefined') {
           const caseData = {
             title,
-            type_id:                TYPE_AUTOMATED,
-            priority_id:            PRIORITY_MEDIUM,
-            template_id:            TEMPLATE_STEPS,
+            type_id:                api.CONSTANTS.TYPE_AUTOMATED,
+            priority_id:            api.CONSTANTS.PRIORITY_MEDIUM,
+            template_id:            api.CONSTANTS.TEMPLATE_STEPS,
             custom_steps_separated: steps
           };
           return api.addCase(sectionId, caseData, callback);

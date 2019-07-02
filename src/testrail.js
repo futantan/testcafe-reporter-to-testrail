@@ -14,16 +14,20 @@ function TestRail (options) {
 
 
 /////////////////////// Customise begin//////////////////////////////////
-const TYPE_AUTOMATED = 3;
+TestRail.prototype.CONSTANTS = {
+  TYPE_AUTOMATED:  3,
+  PRIORITY_MEDIUM: 2,
+  TEMPLATE_STEPS:  2
+};
 
 TestRail.prototype.updateCaseTypeToAutomatedIfNecessary = function (caseId) {
   const updateCaseTypeToAutomated = () => {
-    this.updateCase(caseId, { type_id: TYPE_AUTOMATED }, () => {});
+    this.updateCase(caseId, { type_id: this.CONSTANTS.TYPE_AUTOMATED }, () => {});
   };
 
   this.getCase(caseId, (err, response, caseObj) => {
     if (err) { return; }
-    if (caseObj.type_id !== TYPE_AUTOMATED) {
+    if (caseObj.type_id !== this.CONSTANTS.TYPE_AUTOMATED) {
       updateCaseTypeToAutomated();
     }
   });
