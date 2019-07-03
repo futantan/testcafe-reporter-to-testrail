@@ -219,37 +219,36 @@ module.exports = function () {
       if (this.PushTestCases) {
         if (newCaseList.length === 0) {
           this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test cases data found to publish');
-          return;
-        }
+        } else {
+          this.getSections(api);
 
-        this.getSections(api);
-
-        newCaseList.forEach(testCase => {
-          that.addSectionIfNotExisting(api, testCase.section, function (err1, response1, sectionResult) {
-            if (err1 !== null) {
-              that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
-            } else {
-              const steps = [
-                {
-                  content:  'Step 1',
-                  expected: 'Expected Result 1'
-                },
-                {
-                  content:  'Step 2',
-                  expected: 'Expected Result 2'
-                }
-              ];
-              that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, steps, function (err2, response2, caseResult) {
-                const testCaseDesc = sectionResult.name + ' | ' + testCase.title;
-                if (err2 !== null) {
-                  that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(testCaseDesc).newline().write(err2);
-                } else {
-                  that.newline().write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(testCaseDesc + '(' + caseResult.id + ')')).newline();
-                }
-              });
-            }
+          newCaseList.forEach(testCase => {
+            that.addSectionIfNotExisting(api, testCase.section, function (err1, response1, sectionResult) {
+              if (err1 !== null) {
+                that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
+              } else {
+                const steps = [
+                  {
+                    content:  'Step 1',
+                    expected: 'Expected Result 1'
+                  },
+                  {
+                    content:  'Step 2',
+                    expected: 'Expected Result 2'
+                  }
+                ];
+                that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, steps, function (err2, response2, caseResult) {
+                  const testCaseDesc = sectionResult.name + ' | ' + testCase.title;
+                  if (err2 !== null) {
+                    that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(testCaseDesc).newline().write(err2);
+                  } else {
+                    that.newline().write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(testCaseDesc + '(' + caseResult.id + ')')).newline();
+                  }
+                });
+              }
+            });
           });
-        });
+        }
       }
 
       if (this.PushTestRuns) {
