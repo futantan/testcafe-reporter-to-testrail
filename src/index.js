@@ -53,7 +53,7 @@ module.exports = function () {
       this.ProjectName = process.env.PROJECT_NAME;
       this.EnableTestrail = process.env.TESTRAIL_ENABLE === 'true';
       this.PushTestRuns = process.env.PushTestRuns === 'true';
-      this.PushTestCases = process.env.PushTestRuns === 'true';
+      this.PushTestCases = process.env.PushTestCases === 'true';
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
@@ -199,11 +199,6 @@ module.exports = function () {
         caseidList.push(caseID.trim());
       }
 
-      if (caseidList.length === 0 && newCaseList.length === 0) {
-        this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test case data found to publish');
-        return;
-      }
-
       const api = new TestRail({
         host:     this.TestrailHost,
         user:     this.TestrailUser,
@@ -221,12 +216,16 @@ module.exports = function () {
 
       caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
 
-      if (this.PushTestCases && newCaseList.length > 0) {
+      if (this.PushTestCases) {
+        if (newCaseList.length === 0) {
+          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test cases data found to publish');
+          return;
+        }
+
         this.getSections(api);
-        if (this.Sections.length === 0) return;
 
         newCaseList.forEach(testCase => {
-          that.addSectionIfNotExisting(api, this.Sections, testCase.section, function (err1, response1, sectionResult) {
+          that.addSectionIfNotExisting(api, testCase.section, function (err1, response1, sectionResult) {
             if (err1 !== null) {
               that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
             } else {
@@ -254,6 +253,11 @@ module.exports = function () {
       }
 
       if (this.PushTestRuns) {
+        if (caseidList.length === 0) {
+          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test runs data found to publish');
+          return;
+        }
+
         const AgentDetails = this.agents[0].split('/');
         const rundetails = {
           'suite_id':    this.SuiteID,
@@ -388,8 +392,8 @@ module.exports = function () {
       });
     },
 
-    addSectionIfNotExisting: function addSectionIfNotExisting (api, existingSections, section, callback) {
-      const existingSection = existingSections.filter(existing => existing.name === section)[0];
+    addSectionIfNotExisting: function addSectionIfNotExisting (api, section, callback) {
+      const existingSection = this.Sections.filter(existing => existing.name === section)[0];
 
       if (typeof existingSection === 'undefined') {
         return api.addSection(this.ProjectID, { suite_id: this.SuiteID, name: section }, callback);
