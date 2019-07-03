@@ -24,6 +24,8 @@ module.exports = function () {
     SuiteID:            0,
     Sections:           [],
     EnableTestrail:     false,
+    PushTestRuns:       true,
+    PushTestCases:      true,
     ProjectID:          0,
     ProjectName:        '',
     TestrailUser:       null,
@@ -50,6 +52,8 @@ module.exports = function () {
       this.testStartTime = new Date();
       this.ProjectName = process.env.PROJECT_NAME;
       this.EnableTestrail = process.env.TESTRAIL_ENABLE === 'true';
+      this.PushTestRuns = process.env.PushTestRuns === 'true';
+      this.PushTestCases = process.env.PushTestRuns === 'true';
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
@@ -217,7 +221,7 @@ module.exports = function () {
 
       caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
 
-      if (newCaseList.length > 0) {
+      if (this.PushTestCases && newCaseList.length > 0) {
         this.getSections(api);
         if (this.Sections.length === 0) return;
 
@@ -249,37 +253,39 @@ module.exports = function () {
         });
       }
 
-      const AgentDetails = this.agents[0].split('/');
-      const rundetails = {
-        'suite_id':    this.SuiteID,
-        'include_all': false,
-        'case_ids':    caseidList,
-        'name':        'Run_' + this.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'
-      };
-      let runId = null;
-      let result = null;
-      api.addPlanEntry(this.PlanID, rundetails, function (err, response, run) {
-        if (err !== 'null') {
-          runId = run.runs[0].id;
-          that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Run added successfully.')).newline().write(that.chalk.blue.bold('Run name   ')).write(that.chalk.yellow('Run_' + that.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'));
+      if (this.PushTestRuns) {
+        const AgentDetails = this.agents[0].split('/');
+        const rundetails = {
+          'suite_id':    this.SuiteID,
+          'include_all': false,
+          'case_ids':    caseidList,
+          'name':        'Run_' + this.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'
+        };
+        let runId = null;
+        let result = null;
+        api.addPlanEntry(this.PlanID, rundetails, function (err, response, run) {
+          if (err !== 'null') {
+            runId = run.runs[0].id;
+            that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Run added successfully.')).newline().write(that.chalk.blue.bold('Run name   ')).write(that.chalk.yellow('Run_' + that.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'));
 
-          result = {
-            results: resultsTestcases
-          };
+            result = {
+              results: resultsTestcases
+            };
 
-          api.addResultsForCases(runId, result, function (err1, response1, results) {
-            if (err1 === 'null') {
-              that.newline().write(that.chalk.blue('---------Error at Add result -----')).newline().write(err1);
-            } else if (results.length === 0) {
-              that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
-            } else {
-              that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Result added to the testrail Successfully'));
-            }
-          });
-        } else {
-          that.newline().write(that.chalk.blue('-------------Error at AddPlanEntry ----------------')).newline().write(err);
-        }
-      });
+            api.addResultsForCases(runId, result, function (err1, response1, results) {
+              if (err1 === 'null') {
+                that.newline().write(that.chalk.blue('---------Error at Add result -----')).newline().write(err1);
+              } else if (results.length === 0) {
+                that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
+              } else {
+                that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Result added to the testrail Successfully'));
+              }
+            });
+          } else {
+            that.newline().write(that.chalk.blue('-------------Error at AddPlanEntry ----------------')).newline().write(err);
+          }
+        });
+      }
     },
 
     getProject: function getProject (api) {
