@@ -164,9 +164,6 @@ module.exports = function () {
 
         if (typeof testDesc[2] === 'undefined') {
           newCaseList.push({ section: testDesc[0].trim(), title: testDesc[1].trim() });
-          // verify that Case_ID  of test is present or not
-          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Warning:  Test: ' + testResultItem[1] + ' missing the Testrail ID');
-
           const Testresult = this.assembleTestResult(testResultItem);
           Testresult['case_desc'] = testDesc[0].trim() + ' | ' + testDesc[1].trim();
           resultsNewTestcases.push(Testresult);
@@ -230,13 +227,15 @@ module.exports = function () {
                   } else {
                     newCaseIdList.push(caseResult.id);
                     resultsNewTestcases = that.updateResultWithCaseId(resultsNewTestcases, caseDesc, caseResult.id);
-                    that.newline().write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(caseDesc + '(' + caseResult.id + ')'));
+                    that.newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(caseDesc + '(' + caseResult.id + ')'));
                   }
                 });
               }
             });
           });
         }
+      } else {
+        this.newline().write(this.chalk.green.bold(this.symbols.err)).write('Skip creating test cases in testrail');
       }
 
       if (this.PushTestRuns) {
@@ -273,11 +272,13 @@ module.exports = function () {
               } else if (results.length === 0) {
                 that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
               } else {
-                that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Result added to the testrail Successfully'));
+                that.newline().write('------------------------------------------------------').newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.green('Result added to the testrail Successfully'));
               }
             });
           }
         });
+      } else {
+        this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Skip pushing test runs to testrail');
       }
     },
 
