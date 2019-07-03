@@ -25,7 +25,6 @@ module.exports = function () {
     Sections:           [],
     EnableTestrail:     false,
     PushTestRuns:       true,
-    PushTestCases:      true,
     ProjectID:          0,
     ProjectName:        '',
     TestrailUser:       null,
@@ -53,7 +52,6 @@ module.exports = function () {
       this.ProjectName = process.env.PROJECT_NAME;
       this.EnableTestrail = process.env.TESTRAIL_ENABLE === 'true';
       this.PushTestRuns = process.env.PushTestRuns === 'true';
-      this.PushTestCases = process.env.PushTestCases === 'true';
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
@@ -199,43 +197,39 @@ module.exports = function () {
       this.getSuiteID(api);
       if (this.SuiteID === 0) return;
 
-      if (this.PushTestCases) {
-        if (newCaseList.length === 0) {
-          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test cases data found to publish');
-        } else {
-          this.getSections(api);
-
-          newCaseList.forEach(testCase => {
-            that.addSectionIfNotExisting(api, testCase.section, function (err1, response1, sectionResult) {
-              if (err1 !== null) {
-                that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
-              } else {
-                const steps = [
-                  {
-                    content:  'Step 1',
-                    expected: 'Expected Result 1'
-                  },
-                  {
-                    content:  'Step 2',
-                    expected: 'Expected Result 2'
-                  }
-                ];
-                that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, steps, function (err2, response2, caseResult) {
-                  const caseDesc = sectionResult.name + ' | ' + testCase.title;
-                  if (err2 !== null) {
-                    that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(caseDesc).newline().write(err2);
-                  } else {
-                    newCaseIdList.push(caseResult.id);
-                    resultsNewTestcases = that.updateResultWithCaseId(resultsNewTestcases, caseDesc, caseResult.id);
-                    that.newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(caseDesc + '(' + caseResult.id + ')'));
-                  }
-                });
-              }
-            });
-          });
-        }
+      if (newCaseList.length === 0) {
+        this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test cases data found to publish');
       } else {
-        this.newline().write(this.chalk.green.bold(this.symbols.err)).write('Skip creating test cases in testrail');
+        this.getSections(api);
+
+        newCaseList.forEach(testCase => {
+          that.addSectionIfNotExisting(api, testCase.section, function (err1, response1, sectionResult) {
+            if (err1 !== null) {
+              that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
+            } else {
+              const steps = [
+                {
+                  content:  'Step 1',
+                  expected: 'Expected Result 1'
+                },
+                {
+                  content:  'Step 2',
+                  expected: 'Expected Result 2'
+                }
+              ];
+              that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, steps, function (err2, response2, caseResult) {
+                const caseDesc = sectionResult.name + ' | ' + testCase.title;
+                if (err2 !== null) {
+                  that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(caseDesc).newline().write(err2);
+                } else {
+                  newCaseIdList.push(caseResult.id);
+                  resultsNewTestcases = that.updateResultsWithCaseId(resultsNewTestcases, caseDesc, caseResult.id);
+                  that.newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(caseDesc + '(' + caseResult.id + ')'));
+                }
+              });
+            }
+          });
+        });
       }
 
       if (this.PushTestRuns) {
@@ -408,7 +402,7 @@ module.exports = function () {
       });
     },
 
-    updateResultWithCaseId: function updateResultWithCaseId (results, caseDesc, caseId) {
+    updateResultsWithCaseId: function updateResultsWithCaseId (results, caseDesc, caseId) {
       return results.map(result => {
         if (result['case_desc'] === caseDesc) {
           result['case_id'] = caseId;
