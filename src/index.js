@@ -267,7 +267,9 @@ module.exports = function () {
         let runId = null;
         let result = null;
         api.addPlanEntry(this.PlanID, rundetails, function (err, response, run) {
-          if (err !== 'null') {
+          if (err !== null) {
+            that.newline().write(that.chalk.blue('-------------Error at AddPlanEntry ----------------')).newline().write(err);
+          } else {
             runId = run.runs[0].id;
             that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Run added successfully.')).newline().write(that.chalk.blue.bold('Run name   ')).write(that.chalk.yellow('Run_' + that.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'));
 
@@ -276,7 +278,7 @@ module.exports = function () {
             };
 
             api.addResultsForCases(runId, result, function (err1, response1, results) {
-              if (err1 === 'null') {
+              if (err1 !== null) {
                 that.newline().write(that.chalk.blue('---------Error at Add result -----')).newline().write(err1);
               } else if (results.length === 0) {
                 that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
@@ -284,8 +286,6 @@ module.exports = function () {
                 that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Result added to the testrail Successfully'));
               }
             });
-          } else {
-            that.newline().write(that.chalk.blue('-------------Error at AddPlanEntry ----------------')).newline().write(err);
           }
         });
       }
