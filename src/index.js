@@ -214,8 +214,6 @@ module.exports = function () {
       this.getSuiteID(api);
       if (this.SuiteID === 0) return;
 
-      caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
-
       if (this.PushTestCases) {
         if (newCaseList.length === 0) {
           this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test cases data found to publish');
@@ -256,6 +254,8 @@ module.exports = function () {
           this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test runs data found to publish');
           return;
         }
+
+        caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
 
         const AgentDetails = this.agents[0].split('/');
         const rundetails = {
