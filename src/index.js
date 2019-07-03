@@ -148,6 +148,8 @@ module.exports = function () {
       const resultsTestcases = [];
       const caseidList = [];
       const newCaseList = [];
+      const newCaseIdList = [];
+      let resultsNewTestcases = [];
 
       this.newline()
         .newline()
@@ -164,6 +166,10 @@ module.exports = function () {
           newCaseList.push({ section: testDesc[0].trim(), title: testDesc[1].trim() });
           // verify that Case_ID  of test is present or not
           this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Warning:  Test: ' + testResultItem[1] + ' missing the Testrail ID');
+
+          const Testresult = this.assembleTestResult(testResultItem);
+          Testresult['case_desc'] = testDesc[0].trim() + ' | ' + testDesc[1].trim();
+          resultsNewTestcases.push(Testresult);
           continue;
         }
 
@@ -175,26 +181,8 @@ module.exports = function () {
           continue;
         }
 
-        let _status = testResultItem[2];
-        let comment = null;
-
-        if (_status === 'Skipped') {
-          _status = 6;
-          comment = 'Test Skipped';
-        }
-        else if (_status === 'Passed') {
-          _status = 1;
-          comment = 'Test passed';
-        }
-        else {
-          _status = 5;
-          comment = testResultItem[4]; // if error found for the Test, It will populated in the comment
-        }
-
-        const Testresult = {};
+        const Testresult = this.assembleTestResult(testResultItem);
         Testresult['case_id'] = caseID.trim();
-        Testresult['status_id'] = _status;
-        Testresult['comment'] = comment;
         resultsTestcases.push(Testresult);
         caseidList.push(caseID.trim());
       }
@@ -236,11 +224,13 @@ module.exports = function () {
                   }
                 ];
                 that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, steps, function (err2, response2, caseResult) {
-                  const testCaseDesc = sectionResult.name + ' | ' + testCase.title;
+                  const caseDesc = sectionResult.name + ' | ' + testCase.title;
                   if (err2 !== null) {
-                    that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(testCaseDesc).newline().write(err2);
+                    that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(caseDesc).newline().write(err2);
                   } else {
-                    that.newline().write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(testCaseDesc + '(' + caseResult.id + ')')).newline();
+                    newCaseIdList.push(caseResult.id);
+                    resultsNewTestcases = that.updateResultWithCaseId(resultsNewTestcases, caseDesc, caseResult.id);
+                    that.newline().write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(caseDesc + '(' + caseResult.id + ')'));
                   }
                 });
               }
@@ -250,7 +240,7 @@ module.exports = function () {
       }
 
       if (this.PushTestRuns) {
-        if (caseidList.length === 0) {
+        if (caseidList.length === 0 && newCaseIdList.length === 0) {
           this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test runs data found to publish');
           return;
         }
@@ -261,7 +251,7 @@ module.exports = function () {
         const rundetails = {
           'suite_id':    this.SuiteID,
           'include_all': false,
-          'case_ids':    caseidList,
+          'case_ids':    caseidList.concat(newCaseIdList),
           'name':        'Run_' + this.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'
         };
         let runId = null;
@@ -274,7 +264,7 @@ module.exports = function () {
             that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Run added successfully.')).newline().write(that.chalk.blue.bold('Run name   ')).write(that.chalk.yellow('Run_' + that.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'));
 
             result = {
-              results: resultsTestcases
+              results: resultsTestcases.concat(resultsNewTestcases)
             };
 
             api.addResultsForCases(runId, result, function (err1, response1, results) {
@@ -415,7 +405,38 @@ module.exports = function () {
         }
         return callback(null, existingTestCase, existingTestCase);
       });
+    },
 
+    updateResultWithCaseId: function updateResultWithCaseId (results, caseDesc, caseId) {
+      return results.map(result => {
+        if (result['case_desc'] === caseDesc) {
+          result['case_id'] = caseId;
+        }
+        return result;
+      });
+    },
+
+    assembleTestResult: function assembleTestResult (testResultItem) {
+      let _status = testResultItem[2];
+      let comment = null;
+
+      if (_status === 'Skipped') {
+        _status = 6;
+        comment = 'Test Skipped';
+      }
+      else if (_status === 'Passed') {
+        _status = 1;
+        comment = 'Test passed';
+      }
+      else {
+        _status = 5;
+        comment = testResultItem[4]; // if error found for the Test, It will populated in the comment
+      }
+
+      const testResult = {};
+      testResult['status_id'] = _status;
+      testResult['comment'] = comment;
+      return testResult;
     },
 
     generateReport: function generateReport () {
