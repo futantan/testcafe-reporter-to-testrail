@@ -67,7 +67,7 @@ module.exports = function () {
       this.currentFixtureName = name;
     },
 
-    async reportTestDone (name, testRunInfo) {
+    async reportTestDone (name, testRunInfo, meta) {
       const _this = this;
 
       this.testEndTime = new Date(); // set test end time
@@ -78,7 +78,7 @@ module.exports = function () {
 
       this.testStartTime = new Date(); // set net test start time
 
-      const testOutput = {};
+      const testOutput = {meta};
       testOutput[0] = this.currentFixtureName;
       testOutput[1] = name;
       testOutput[2] = testRunInfo.skipped ? 'Skipped' : hasErr ? 'Failed' : 'Passed';
@@ -159,16 +159,7 @@ module.exports = function () {
         // eslint-disable-next-line
         const testDesc = testResultItem[1].split('\|'); // split the Test Description
         let caseID = null;
-        const steps = [
-          {
-            content:  'Step 1',
-            expected: 'Expected Result 1'
-          },
-          {
-            content:  'Step 2',
-            expected: 'Expected Result 2'
-          }
-        ];
+        const steps = testResultItem.meta.steps;
         const testCase = { section: testDesc[0].trim(), title: testDesc[1].trim(), steps };
         const testResult = this.assembleTestResult(testResultItem);
 
