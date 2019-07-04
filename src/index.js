@@ -161,7 +161,17 @@ module.exports = function () {
         let caseID = null;
 
         if (typeof testDesc[2] === 'undefined') {
-          newCaseList.push({ section: testDesc[0].trim(), title: testDesc[1].trim() });
+          const steps = [
+            {
+              content:  'Step 1',
+              expected: 'Expected Result 1'
+            },
+            {
+              content:  'Step 2',
+              expected: 'Expected Result 2'
+            }
+          ];
+          newCaseList.push({ section: testDesc[0].trim(), title: testDesc[1].trim(), steps });
           const Testresult = this.assembleTestResult(testResultItem);
           Testresult['case_desc'] = testDesc[0].trim() + ' | ' + testDesc[1].trim();
           resultsNewTestcases.push(Testresult);
@@ -207,17 +217,7 @@ module.exports = function () {
             if (err1 !== null) {
               that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
             } else {
-              const steps = [
-                {
-                  content:  'Step 1',
-                  expected: 'Expected Result 1'
-                },
-                {
-                  content:  'Step 2',
-                  expected: 'Expected Result 2'
-                }
-              ];
-              that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, steps, function (err2, response2, caseResult) {
+              that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, testCase.steps, function (err2, response2, caseResult) {
                 const caseDesc = sectionResult.name + ' | ' + testCase.title;
                 if (err2 !== null) {
                   that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(caseDesc).newline().write(err2);
@@ -266,13 +266,13 @@ module.exports = function () {
               } else if (results.length === 0) {
                 that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
               } else {
-                that.newline().write('------------------------------------------------------').newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.green('Result added to the testrail Successfully'));
+                that.newline().write('------------------------------------------------------').newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.green('Result added to the testrail Successfully')).newline();
               }
             });
           }
         });
       } else {
-        this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Skip pushing test runs to testrail');
+        this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Skip pushing test runs to testrail').newline();
       }
     },
 
