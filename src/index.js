@@ -145,7 +145,7 @@ module.exports = function () {
 
       const resultsTestcases = [];
       const caseidList = [];
-      const newCaseList = [];
+      const caseList = [];
       const newCaseIdList = [];
       let resultsNewTestcases = [];
 
@@ -159,22 +159,24 @@ module.exports = function () {
         // eslint-disable-next-line
         const testDesc = testResultItem[1].split('\|'); // split the Test Description
         let caseID = null;
+        const steps = [
+          {
+            content:  'Step 1',
+            expected: 'Expected Result 1'
+          },
+          {
+            content:  'Step 2',
+            expected: 'Expected Result 2'
+          }
+        ];
+        const testCase = { section: testDesc[0].trim(), title: testDesc[1].trim(), steps };
+        const testResult = this.assembleTestResult(testResultItem);
 
+        //this is for test case without case ID
         if (typeof testDesc[2] === 'undefined') {
-          const steps = [
-            {
-              content:  'Step 1',
-              expected: 'Expected Result 1'
-            },
-            {
-              content:  'Step 2',
-              expected: 'Expected Result 2'
-            }
-          ];
-          newCaseList.push({ section: testDesc[0].trim(), title: testDesc[1].trim(), steps });
-          const Testresult = this.assembleTestResult(testResultItem);
-          Testresult['case_desc'] = testDesc[0].trim() + ' | ' + testDesc[1].trim();
-          resultsNewTestcases.push(Testresult);
+          testResult['case_desc'] = testDesc[0].trim() + ' | ' + testDesc[1].trim();
+          resultsNewTestcases.push(testResult);
+          caseList.push(testCase);
           continue;
         }
 
@@ -186,9 +188,10 @@ module.exports = function () {
           continue;
         }
 
-        const Testresult = this.assembleTestResult(testResultItem);
-        Testresult['case_id'] = caseID.trim();
-        resultsTestcases.push(Testresult);
+        testResult['case_id'] = caseID.trim();
+        testCase['id'] = caseID.trim();
+        resultsTestcases.push(testResult);
+        caseList.push(testCase);
         caseidList.push(caseID.trim());
       }
 
@@ -207,17 +210,17 @@ module.exports = function () {
       this.getSuiteID(api);
       if (this.SuiteID === 0) return;
 
-      if (newCaseList.length === 0) {
+      if (caseList.length === 0) {
         this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test cases data found to publish');
       } else {
         this.getSections(api);
 
-        newCaseList.forEach(testCase => {
+        caseList.forEach(testCase => {
           that.addSectionIfNotExisting(api, testCase.section, function (err1, response1, sectionResult) {
             if (err1 !== null) {
               that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
             } else {
-              that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, testCase.steps, function (err2, response2, caseResult) {
+              that.addCaseIfNotExisting(api, sectionResult.id, testCase, function (err2, response2, caseResult) {
                 const caseDesc = sectionResult.name + ' | ' + testCase.title;
                 if (err2 !== null) {
                   that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(caseDesc).newline().write(err2);
@@ -385,20 +388,31 @@ module.exports = function () {
       return callback(null, existingSection, existingSection);
     },
 
-    addCaseIfNotExisting: function addCaseIfNotExisting (api, sectionId, title, steps, callback) {
+    addCaseIfNotExisting: function addCaseIfNotExisting (api, sectionId, testCase, callback) {
+      const that = this;
+      const caseData = {
+        title:                  testCase.title,
+        type_id:                api.CONSTANTS.TYPE_AUTOMATED,
+        priority_id:            api.CONSTANTS.PRIORITY_MEDIUM,
+        template_id:            api.CONSTANTS.TEMPLATE_STEPS,
+        custom_steps_separated: testCase.steps
+      };
+
+      if (typeof testCase.id !== 'undefined') {
+        return api.updateCase(testCase.id, caseData, callback);
+      }
+
       return api.getCases(this.ProjectID, { suite_id: this.SuiteID, section_id: sectionId }, function (err, response, result) {
-        const existingTestCase = result.filter(testcase => testcase.title === title)[0];
-        const caseData = {
-          title,
-          type_id:                api.CONSTANTS.TYPE_AUTOMATED,
-          priority_id:            api.CONSTANTS.PRIORITY_MEDIUM,
-          template_id:            api.CONSTANTS.TEMPLATE_STEPS,
-          custom_steps_separated: steps
-        };
-        if (typeof existingTestCase === 'undefined') {
-          return api.addCase(sectionId, caseData, callback);
+        if (err !== null) {
+          that.newline().write(that.chalk.blue('---------Error at Get Cases -----')).newline().write(err);
+        } else {
+          const existingTestCase = result.filter(
+            testcase => testcase.title === testCase.title)[0];
+          if (typeof existingTestCase === 'undefined') {
+            return api.addCase(sectionId, caseData, callback);
+          }
+          return api.updateCase(existingTestCase.id, caseData, callback);
         }
-        return api.updateCase(existingTestCase.id, caseData, callback);
       });
     },
 
