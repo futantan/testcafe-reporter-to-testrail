@@ -78,7 +78,7 @@ module.exports = function () {
 
       this.testStartTime = new Date(); // set net test start time
 
-      const testOutput = {meta};
+      const testOutput = { meta };
       testOutput[0] = this.currentFixtureName;
       testOutput[1] = name;
       testOutput[2] = testRunInfo.skipped ? 'Skipped' : hasErr ? 'Failed' : 'Passed';
