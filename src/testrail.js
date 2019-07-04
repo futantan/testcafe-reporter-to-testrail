@@ -14,19 +14,25 @@ function TestRail (options) {
 
 
 /////////////////////// Customise begin//////////////////////////////////
-const TYPE_AUTOMATED = 3;
+TestRail.prototype.CONSTANTS = {
+  TYPE_AUTOMATED:  3,
+  PRIORITY_MEDIUM: 2,
+  TEMPLATE_STEPS:  2
+};
+
 TestRail.prototype.updateCaseTypeToAutomatedIfNecessary = function (caseId) {
   const updateCaseTypeToAutomated = () => {
-    this.updateCase(caseId, { type_id: TYPE_AUTOMATED }, () => {});
+    this.updateCase(caseId, { type_id: this.CONSTANTS.TYPE_AUTOMATED }, () => {});
   };
 
   this.getCase(caseId, (err, response, caseObj) => {
     if (err) { return; }
-    if (caseObj.type_id !== TYPE_AUTOMATED) {
+    if (caseObj.type_id !== this.CONSTANTS.TYPE_AUTOMATED) {
       updateCaseTypeToAutomated();
     }
   });
 };
+
 /////////////////////// Customise end  //////////////////////////////////
 
 TestRail.prototype.apiGet = function (apiMethod, queryVariables, callback) {
@@ -403,7 +409,6 @@ TestRail.prototype.getSection = function (id, callback) {
 
 TestRail.prototype.getSections = function (projectId, filters, callback) {
   var uri = 'get_sections/' + projectId;
-
   if (typeof filters === 'function') {
     callback = filters;
     return this.apiGet(uri, callback);

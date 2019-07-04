@@ -22,7 +22,9 @@ module.exports = function () {
     PlanName:           '',
     PlanID:             0,
     SuiteID:            0,
+    Sections:           [],
     EnableTestrail:     false,
+    PushTestRuns:       true,
     ProjectID:          0,
     ProjectName:        '',
     TestrailUser:       null,
@@ -49,6 +51,7 @@ module.exports = function () {
       this.testStartTime = new Date();
       this.ProjectName = process.env.PROJECT_NAME;
       this.EnableTestrail = process.env.TESTRAIL_ENABLE === 'true';
+      this.PushTestRuns = process.env.PushTestRuns === 'true';
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
@@ -142,6 +145,9 @@ module.exports = function () {
 
       const resultsTestcases = [];
       const caseidList = [];
+      const newCaseList = [];
+      const newCaseIdList = [];
+      let resultsNewTestcases = [];
 
       this.newline()
         .newline()
@@ -155,8 +161,20 @@ module.exports = function () {
         let caseID = null;
 
         if (typeof testDesc[2] === 'undefined') {
-          // verify that Case_ID  of test is present or not
-          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Warning:  Test: ' + testResultItem[1] + ' missing the Testrail ID');
+          const steps = [
+            {
+              content:  'Step 1',
+              expected: 'Expected Result 1'
+            },
+            {
+              content:  'Step 2',
+              expected: 'Expected Result 2'
+            }
+          ];
+          newCaseList.push({ section: testDesc[0].trim(), title: testDesc[1].trim(), steps });
+          const Testresult = this.assembleTestResult(testResultItem);
+          Testresult['case_desc'] = testDesc[0].trim() + ' | ' + testDesc[1].trim();
+          resultsNewTestcases.push(Testresult);
           continue;
         }
 
@@ -168,33 +186,10 @@ module.exports = function () {
           continue;
         }
 
-        let _status = testResultItem[2];
-        let comment = null;
-
-        if (_status === 'Skipped') {
-          _status = 6;
-          comment = 'Test Skipped';
-        }
-        else if (_status === 'Passed') {
-          _status = 1;
-          comment = 'Test passed';
-        }
-        else {
-          _status = 5;
-          comment = testResultItem[4]; // if error found for the Test, It will populated in the comment
-        }
-
-        const Testresult = {};
+        const Testresult = this.assembleTestResult(testResultItem);
         Testresult['case_id'] = caseID.trim();
-        Testresult['status_id'] = _status;
-        Testresult['comment'] = comment;
         resultsTestcases.push(Testresult);
         caseidList.push(caseID.trim());
-      }
-
-      if (caseidList.length === 0) {
-        this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test case data found to publish');
-        return;
       }
 
       const api = new TestRail({
@@ -211,39 +206,74 @@ module.exports = function () {
 
       this.getSuiteID(api);
       if (this.SuiteID === 0) return;
-      caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
 
-      const AgentDetails = this.agents[0].split('/');
-      const rundetails = {
-        'suite_id':    this.SuiteID,
-        'include_all': false,
-        'case_ids':    caseidList,
-        'name':        'Run_' + this.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'
-      };
-      let runId = null;
-      let result = null;
-      api.addPlanEntry(this.PlanID, rundetails, function (err, response, run) {
-        if (err !== 'null') {
-          runId = run.runs[0].id;
-          that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Run added successfully.')).newline().write(that.chalk.blue.bold('Run name   ')).write(that.chalk.yellow('Run_' + that.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'));
+      if (newCaseList.length === 0) {
+        this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test cases data found to publish');
+      } else {
+        this.getSections(api);
 
-          result = {
-            results: resultsTestcases
-          };
-
-          api.addResultsForCases(runId, result, function (err1, response1, results) {
-            if (err1 === 'null') {
-              that.newline().write(that.chalk.blue('---------Error at Add result -----')).newline().write(err1);
-            } else if (results.length === 0) {
-              that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
+        newCaseList.forEach(testCase => {
+          that.addSectionIfNotExisting(api, testCase.section, function (err1, response1, sectionResult) {
+            if (err1 !== null) {
+              that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
             } else {
-              that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Result added to the testrail Successfully'));
+              that.addCaseIfNotExisting(api, sectionResult.id, testCase.title, testCase.steps, function (err2, response2, caseResult) {
+                const caseDesc = sectionResult.name + ' | ' + testCase.title;
+                if (err2 !== null) {
+                  that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(caseDesc).newline().write(err2);
+                } else {
+                  newCaseIdList.push(caseResult.id);
+                  resultsNewTestcases = that.updateResultsWithCaseId(resultsNewTestcases, caseDesc, caseResult.id);
+                  that.newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(caseDesc + '(' + caseResult.id + ')'));
+                }
+              });
             }
           });
-        } else {
-          that.newline().write(that.chalk.blue('-------------Error at AddPlanEntry ----------------')).newline().write(err);
+        });
+      }
+
+      if (this.PushTestRuns) {
+        if (caseidList.length === 0 && newCaseIdList.length === 0) {
+          this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test runs data found to publish');
+          return;
         }
-      });
+
+        caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
+
+        const AgentDetails = this.agents[0].split('/');
+        const rundetails = {
+          'suite_id':    this.SuiteID,
+          'include_all': false,
+          'case_ids':    caseidList.concat(newCaseIdList),
+          'name':        'Run_' + this.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'
+        };
+        let runId = null;
+        let result = null;
+        api.addPlanEntry(this.PlanID, rundetails, function (err, response, run) {
+          if (err !== null) {
+            that.newline().write(that.chalk.blue('-------------Error at AddPlanEntry ----------------')).newline().write(err);
+          } else {
+            runId = run.runs[0].id;
+            that.newline().write('------------------------------------------------------').newline().write(that.chalk.green('Run added successfully.')).newline().write(that.chalk.blue.bold('Run name   ')).write(that.chalk.yellow('Run_' + that.creationDate + '(' + AgentDetails[0] + '_' + AgentDetails[1] + ')'));
+
+            result = {
+              results: resultsTestcases.concat(resultsNewTestcases)
+            };
+
+            api.addResultsForCases(runId, result, function (err1, response1, results) {
+              if (err1 !== null) {
+                that.newline().write(that.chalk.blue('---------Error at Add result -----')).newline().write(err1);
+              } else if (results.length === 0) {
+                that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
+              } else {
+                that.newline().write('------------------------------------------------------').newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.green('Result added to the testrail Successfully')).newline();
+              }
+            });
+          }
+        });
+      } else {
+        this.newline().write(this.chalk.red.bold(this.symbols.err)).write('Skip pushing test runs to testrail').newline();
+      }
     },
 
     getProject: function getProject (api) {
@@ -332,6 +362,76 @@ module.exports = function () {
           that.SuiteID = 0;
         }
       });
+    },
+
+    getSections: function getSections (api) {
+      const that = this;
+
+      return api.getSections(this.ProjectID, { suite_id: this.SuiteID }, function (err, response, sections) {
+        if (err !== null) {
+          that.newline().write(that.chalk.blue('---------Error at Get Sections -----')).newline().write(err);
+        } else {
+          that.Sections = sections;
+        }
+      });
+    },
+
+    addSectionIfNotExisting: function addSectionIfNotExisting (api, section, callback) {
+      const existingSection = this.Sections.filter(existing => existing.name === section)[0];
+
+      if (typeof existingSection === 'undefined') {
+        return api.addSection(this.ProjectID, { suite_id: this.SuiteID, name: section }, callback);
+      }
+      return callback(null, existingSection, existingSection);
+    },
+
+    addCaseIfNotExisting: function addCaseIfNotExisting (api, sectionId, title, steps, callback) {
+      return api.getCases(this.ProjectID, { suite_id: this.SuiteID, section_id: sectionId }, function (err, response, result) {
+        const existingTestCase = result.filter(testcase => testcase.title === title)[0];
+        if (typeof existingTestCase === 'undefined') {
+          const caseData = {
+            title,
+            type_id:                api.CONSTANTS.TYPE_AUTOMATED,
+            priority_id:            api.CONSTANTS.PRIORITY_MEDIUM,
+            template_id:            api.CONSTANTS.TEMPLATE_STEPS,
+            custom_steps_separated: steps
+          };
+          return api.addCase(sectionId, caseData, callback);
+        }
+        return callback(null, existingTestCase, existingTestCase);
+      });
+    },
+
+    updateResultsWithCaseId: function updateResultsWithCaseId (results, caseDesc, caseId) {
+      return results.map(result => {
+        if (result['case_desc'] === caseDesc) {
+          result['case_id'] = caseId;
+        }
+        return result;
+      });
+    },
+
+    assembleTestResult: function assembleTestResult (testResultItem) {
+      let _status = testResultItem[2];
+      let comment = null;
+
+      if (_status === 'Skipped') {
+        _status = 6;
+        comment = 'Test Skipped';
+      }
+      else if (_status === 'Passed') {
+        _status = 1;
+        comment = 'Test passed';
+      }
+      else {
+        _status = 5;
+        comment = testResultItem[4]; // if error found for the Test, It will populated in the comment
+      }
+
+      const testResult = {};
+      testResult['status_id'] = _status;
+      testResult['comment'] = comment;
+      return testResult;
     },
 
     generateReport: function generateReport () {
