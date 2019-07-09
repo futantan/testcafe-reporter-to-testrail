@@ -27,6 +27,7 @@ module.exports = function () {
     PushTestRuns:       false,
     ProjectID:          0,
     ProjectName:        '',
+    SuiteName:          '',
     TestrailUser:       null,
     TestrailPass:       null,
     TestrailHost:       null,
@@ -50,12 +51,13 @@ module.exports = function () {
       this.agents = userAgents;
       this.testStartTime = new Date();
       this.ProjectName = process.env.PROJECT_NAME;
+      this.SuiteName = process.env.SUITE_NAME;
       this.EnableTestrail = process.env.TESTRAIL_ENABLE === 'true';
       this.PushTestRuns = process.env.PUSH_TEST_RUNS === 'true';
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
-      if (this.EnableTestrail && (!this.ProjectName || !this.TestrailHost || !this.TestrailPass || !this.TestrailUser)) {
+      if (this.EnableTestrail && (!this.ProjectName || !this.SuiteName || !this.TestrailHost || !this.TestrailPass || !this.TestrailUser)) {
         this.newline().write(this.chalk.red.bold(INVALID_ENV));
         process.exit(1);
       }
@@ -341,12 +343,13 @@ module.exports = function () {
       const that = this;
 
       return api.getSuites(this.ProjectID, function (err, response, suites) {
-        if (err !== 'null') {
-          if (suites.length === 0) {
-            that.newline().write(that.chalk.red('The project doesnt contain any suite'));
+        if (err === null) {
+          const existingSuite = suites.filter(suite => suite.name === that.SuiteName)[0];
+          if (typeof existingSuite === 'undefined') {
+            that.newline().write(that.chalk.red('The project doesnt contain suite:')).write(that.SuiteName).newline();
             that.SuiteID = 0;
           } else {
-            const id = suites[0].id;
+            const id = existingSuite.id;
             that.newline().write(that.chalk.blue.bold('Suite name(id) ')).write(that.chalk.yellow(suites[0].name + '(' + id + ')'));
             that.SuiteID = id;
           }
