@@ -24,7 +24,7 @@ module.exports = function () {
     SuiteID:            0,
     Sections:           [],
     EnableTestrail:     false,
-    PushTestRuns:       true,
+    PushTestRuns:       false,
     ProjectID:          0,
     ProjectName:        '',
     TestrailUser:       null,
@@ -51,7 +51,7 @@ module.exports = function () {
       this.testStartTime = new Date();
       this.ProjectName = process.env.PROJECT_NAME;
       this.EnableTestrail = process.env.TESTRAIL_ENABLE === 'true';
-      this.PushTestRuns = process.env.PushTestRuns === 'true';
+      this.PushTestRuns = process.env.PUSH_TEST_RUNS === 'true';
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
@@ -195,9 +195,6 @@ module.exports = function () {
       this.getProject(api);
       if (this.ProjectID === 0) return;
 
-      this.getPlanID(api);
-      if (this.PlanID === 0) return;
-
       this.getSuiteID(api);
       if (this.SuiteID === 0) return;
 
@@ -231,6 +228,9 @@ module.exports = function () {
           this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test runs data found to publish');
           return;
         }
+
+        this.getPlanID(api);
+        if (this.PlanID === 0) return;
 
         caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
 
