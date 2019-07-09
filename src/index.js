@@ -215,7 +215,10 @@ module.exports = function () {
                 if (err2 !== null) {
                   that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(caseDesc).newline().write(err2);
                 } else {
-                  newCaseIdList.push(caseResult.id);
+                  const caseIdStr = caseResult.id.toString();
+                  if (!newCaseIdList.includes(caseIdStr)) {
+                    newCaseIdList.push(caseIdStr);
+                  }
                   resultsNewTestcases = that.updateResultsWithCaseId(resultsNewTestcases, caseDesc, caseResult.id);
                   that.newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(caseDesc + '(' + caseResult.id + ')'));
                 }
@@ -260,7 +263,7 @@ module.exports = function () {
               if (err1 !== null) {
                 that.newline().write(that.chalk.blue('---------Error at Add result -----')).newline().write(err1);
               } else if (results.length === 0) {
-                that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
+                that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline();
               } else {
                 that.newline().write('------------------------------------------------------').newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.green('Result added to the testrail Successfully')).newline();
               }
