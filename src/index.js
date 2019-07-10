@@ -210,6 +210,9 @@ module.exports = function () {
             if (err1 !== null) {
               that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
             } else {
+              if (!that.Sections.includes(sectionResult)) {
+                that.Sections.push(sectionResult);
+              }
               that.addCaseIfNotExisting(api, sectionResult.id, testCase, function (err2, response2, caseResult) {
                 const caseDesc = sectionResult.name + ' | ' + testCase.title;
                 if (err2 !== null) {
