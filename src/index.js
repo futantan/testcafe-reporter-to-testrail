@@ -31,6 +31,7 @@ module.exports = function () {
     TestrailUser:       null,
     TestrailPass:       null,
     TestrailHost:       null,
+    TestcaseType:       null,
     ConfigID:           [],
 
     async reportTaskStart (startTime, userAgents, testCount) {
@@ -57,6 +58,7 @@ module.exports = function () {
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
+      this.TestcaseType = process.env.TESTCASE_TYPE;
       if (this.EnableTestrail && (!this.ProjectName || !this.SuiteName || !this.TestrailHost || !this.TestrailPass || !this.TestrailUser)) {
         this.newline().write(this.chalk.red.bold(INVALID_ENV));
         process.exit(1);
@@ -239,8 +241,7 @@ module.exports = function () {
 
         this.getPlanID(api);
         if (this.PlanID === 0) return;
-
-        caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
+        // caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
 
         const AgentDetails = this.agents[0].split('/');
         const rundetails = {
@@ -392,7 +393,7 @@ module.exports = function () {
       const that = this;
       const caseData = {
         title:                  testCase.title,
-        type_id:                api.CONSTANTS.TYPE_AUTOMATED,
+        type_id:                that.getTestcaseTypeId(api),
         priority_id:            api.CONSTANTS.PRIORITY_MEDIUM,
         template_id:            api.CONSTANTS.TEMPLATE_STEPS,
         custom_steps_separated: testCase.steps
@@ -414,6 +415,17 @@ module.exports = function () {
           return api.updateCase(existingTestCase.id, caseData, callback);
         }
       });
+    },
+
+    getTestcaseTypeId: function getTestcaseTypeId (api) {
+      if (!this.TestcaseType) {
+        return api.CONSTANTS.TYPE_AUTOMATED;
+      }
+      const typeId = api.CONSTANTS[`TYPE_${this.TestcaseType.toUpperCase()}`];
+      if (typeof typeId === 'undefined') {
+        return api.CONSTANTS.TYPE_AUTOMATED;
+      }
+      return typeId;
     },
 
     updateResultsWithCaseId: function updateResultsWithCaseId (results, caseDesc, caseId) {

@@ -15,9 +15,20 @@ function TestRail (options) {
 
 /////////////////////// Customise begin//////////////////////////////////
 TestRail.prototype.CONSTANTS = {
-  TYPE_AUTOMATED:  3,
-  PRIORITY_MEDIUM: 2,
-  TEMPLATE_STEPS:  2
+  TYPE_ACCEPTANCE:    1,
+  TYPE_ACCESSIBILITY: 2,
+  TYPE_AUTOMATED:     3,
+  TYPE_COMPATIBILITY: 4,
+  TYPE_DESTRUCTIVE:   5,
+  TYPE_FUNCTIONAL:    6,
+  TYPE_OTHER:         7,
+  TYPE_PERFORMANCE:   8,
+  TYPE_REGRESSION:    9,
+  TYPE_SECURITY:      10,
+  TYPE_SMOKE_SANITY:  11,
+  TYPE_USABILITY:     12,
+  PRIORITY_MEDIUM:    2,
+  TEMPLATE_STEPS:     2
 };
 
 TestRail.prototype.updateCaseTypeToAutomatedIfNecessary = function (caseId) {
