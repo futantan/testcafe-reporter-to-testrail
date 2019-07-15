@@ -241,7 +241,6 @@ module.exports = function () {
 
         this.getPlanID(api);
         if (this.PlanID === 0) return;
-        // caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
 
         const AgentDetails = this.agents[0].split('/');
         const rundetails = {
@@ -418,12 +417,13 @@ module.exports = function () {
     },
 
     getTestcaseTypeId: function getTestcaseTypeId (api) {
+      const defaultTypeId = api.CONSTANTS.TYPE_FUNCTIONAL;
       if (!this.TestcaseType) {
-        return api.CONSTANTS.TYPE_AUTOMATED;
+        return defaultTypeId;
       }
       const typeId = api.CONSTANTS[`TYPE_${this.TestcaseType.toUpperCase()}`];
       if (typeof typeId === 'undefined') {
-        return api.CONSTANTS.TYPE_AUTOMATED;
+        return defaultTypeId;
       }
       return typeId;
     },
