@@ -210,7 +210,7 @@ module.exports = function () {
         this.getSections(api);
 
         if (!this.UpdateTestCases) {
-          this.chalk.blue.bold('Updating test cases is toggled off');
+          this.newline().write(this.chalk.blue.bold('Updating test cases is toggled off'));
         }
 
         caseList.forEach(testCase => {
@@ -405,8 +405,7 @@ module.exports = function () {
       };
 
       if (typeof testCase.id !== 'undefined') {
-        // eslint-disable-next-line no-undef
-        return this.UpdateTestCases ? api.updateCase(testCase.id, caseData, callback) : Promise.resolve(testCase);
+        return this.UpdateTestCases ? api.updateCase(testCase.id, caseData, callback) : callback(null, null, testCase);
       }
 
       return api.getCases(this.ProjectID, { suite_id: this.SuiteID, section_id: sectionId }, function (err, response, result) {
@@ -421,8 +420,7 @@ module.exports = function () {
           if (that.UpdateTestCases) {
             return api.updateCase(existingTestCase.id, caseData, callback);
           }
-          // eslint-disable-next-line no-undef
-          return Promise.resolve(existingTestCase);
+          return callback(null, null, existingTestCase);
         }
       });
     },
