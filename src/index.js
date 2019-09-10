@@ -25,6 +25,7 @@ module.exports = function () {
     Sections:           [],
     EnableTestrail:     false,
     PushTestRuns:       false,
+    UpdateTestCases:    false,
     ProjectID:          0,
     ProjectName:        '',
     SuiteName:          '',
@@ -55,6 +56,7 @@ module.exports = function () {
       this.SuiteName = process.env.SUITE_NAME;
       this.EnableTestrail = process.env.TESTRAIL_ENABLE === 'true';
       this.PushTestRuns = process.env.PUSH_TEST_RUNS === 'true';
+      this.UpdateTestCases = process.env.UPDATE_TEST_CASES === 'true';
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
@@ -206,6 +208,10 @@ module.exports = function () {
         this.newline().write(this.chalk.red.bold(this.symbols.err)).write('No test cases data found to publish');
       } else {
         this.getSections(api);
+
+        if (!this.UpdateTestCases) {
+          this.chalk.blue.bold('Updating test cases is toggled off');
+        }
 
         caseList.forEach(testCase => {
           that.addSectionIfNotExisting(api, testCase.section, function (err1, response1, sectionResult) {
@@ -399,7 +405,8 @@ module.exports = function () {
       };
 
       if (typeof testCase.id !== 'undefined') {
-        return api.updateCase(testCase.id, caseData, callback);
+        // eslint-disable-next-line no-undef
+        return this.UpdateTestCases ? api.updateCase(testCase.id, caseData, callback) : Promise.resolve(testCase);
       }
 
       return api.getCases(this.ProjectID, { suite_id: this.SuiteID, section_id: sectionId }, function (err, response, result) {
@@ -411,7 +418,11 @@ module.exports = function () {
           if (typeof existingTestCase === 'undefined') {
             return api.addCase(sectionId, caseData, callback);
           }
-          return api.updateCase(existingTestCase.id, caseData, callback);
+          if (that.UpdateTestCases) {
+            return api.updateCase(existingTestCase.id, caseData, callback);
+          }
+          // eslint-disable-next-line no-undef
+          return Promise.resolve(existingTestCase);
         }
       });
     },
