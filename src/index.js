@@ -165,8 +165,8 @@ module.exports = function () {
         // eslint-disable-next-line
         const testDesc = testResultItem[1].split('\|'); // split the Test Description
         let caseID = null;
-        const steps = testResultItem.meta.steps;
-        const testCase = { section: testDesc[0].trim(), title: testDesc[1].trim(), steps };
+        const { refs, steps, test_objective, preconditions } = testResultItem.meta;
+        const testCase = { section: testDesc[0].trim(), title: testDesc[1].trim(), steps, refs, test_objective, preconditions };
         const testResult = this.assembleTestResult(testResultItem);
 
         //this is for test case without case ID
@@ -401,7 +401,11 @@ module.exports = function () {
         type_id:                that.getTestcaseTypeId(api),
         priority_id:            api.CONSTANTS.PRIORITY_MEDIUM,
         template_id:            api.CONSTANTS.TEMPLATE_STEPS,
-        custom_steps_separated: testCase.steps
+        refs:                   testCase.refs,
+        custom_steps_separated: testCase.steps,
+        custom_browser:         testCase.browser,
+        custom_testobjective:   testCase.test_objective,
+        custom_preconds:        testCase.preconditions
       };
 
       if (typeof testCase.id !== 'undefined') {
