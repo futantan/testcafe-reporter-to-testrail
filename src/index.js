@@ -24,12 +24,15 @@ module.exports = function () {
     SuiteID:            0,
     Sections:           [],
     EnableTestrail:     false,
-    PushTestRuns:       true,
+    PushTestRuns:       false,
+    UpdateTestCases:    false,
     ProjectID:          0,
     ProjectName:        '',
+    SuiteName:          '',
     TestrailUser:       null,
     TestrailPass:       null,
     TestrailHost:       null,
+    TestcaseType:       null,
     ConfigID:           [],
 
     async reportTaskStart (startTime, userAgents, testCount) {
@@ -50,12 +53,15 @@ module.exports = function () {
       this.agents = userAgents;
       this.testStartTime = new Date();
       this.ProjectName = process.env.PROJECT_NAME;
+      this.SuiteName = process.env.SUITE_NAME;
       this.EnableTestrail = process.env.TESTRAIL_ENABLE === 'true';
-      this.PushTestRuns = process.env.PushTestRuns === 'true';
+      this.PushTestRuns = process.env.PUSH_TEST_RUNS === 'true';
+      this.UpdateTestCases = process.env.UPDATE_TEST_CASES === 'true';
       this.TestrailHost = process.env.TESTRAIL_HOST;
       this.TestrailPass = process.env.TESTRAIL_PASS;
       this.TestrailUser = process.env.TESTRAIL_USER;
-      if (this.EnableTestrail && (!this.ProjectName || !this.TestrailHost || !this.TestrailPass || !this.TestrailUser)) {
+      this.TestcaseType = process.env.TESTCASE_TYPE;
+      if (this.EnableTestrail && (!this.ProjectName || !this.SuiteName || !this.TestrailHost || !this.TestrailPass || !this.TestrailUser)) {
         this.newline().write(this.chalk.red.bold(INVALID_ENV));
         process.exit(1);
       }
@@ -159,8 +165,8 @@ module.exports = function () {
         // eslint-disable-next-line
         const testDesc = testResultItem[1].split('\|'); // split the Test Description
         let caseID = null;
-        const steps = testResultItem.meta.steps;
-        const testCase = { section: testDesc[0].trim(), title: testDesc[1].trim(), steps };
+        const { refs, steps, test_objective, preconditions } = testResultItem.meta;
+        const testCase = { section: testDesc[0].trim(), title: testDesc[1].trim(), steps, refs, test_objective, preconditions };
         const testResult = this.assembleTestResult(testResultItem);
 
         //this is for test case without case ID
@@ -195,9 +201,6 @@ module.exports = function () {
       this.getProject(api);
       if (this.ProjectID === 0) return;
 
-      this.getPlanID(api);
-      if (this.PlanID === 0) return;
-
       this.getSuiteID(api);
       if (this.SuiteID === 0) return;
 
@@ -206,17 +209,27 @@ module.exports = function () {
       } else {
         this.getSections(api);
 
+        if (!this.UpdateTestCases) {
+          this.newline().write(this.chalk.blue.bold('Updating test cases is toggled off'));
+        }
+
         caseList.forEach(testCase => {
           that.addSectionIfNotExisting(api, testCase.section, function (err1, response1, sectionResult) {
             if (err1 !== null) {
               that.newline().write(that.chalk.blue('---------Error at Add Section -----')).write(testCase.section).newline().write(err1);
             } else {
+              if (!that.Sections.includes(sectionResult)) {
+                that.Sections.push(sectionResult);
+              }
               that.addCaseIfNotExisting(api, sectionResult.id, testCase, function (err2, response2, caseResult) {
                 const caseDesc = sectionResult.name + ' | ' + testCase.title;
                 if (err2 !== null) {
                   that.newline().write(that.chalk.blue('---------Error at Add Case -----')).write(caseDesc).newline().write(err2);
                 } else {
-                  newCaseIdList.push(caseResult.id);
+                  const caseIdStr = caseResult.id.toString();
+                  if (!newCaseIdList.includes(caseIdStr)) {
+                    newCaseIdList.push(caseIdStr);
+                  }
                   resultsNewTestcases = that.updateResultsWithCaseId(resultsNewTestcases, caseDesc, caseResult.id);
                   that.newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.blue('Section | Test case (id)')).write(that.chalk.yellow(caseDesc + '(' + caseResult.id + ')'));
                 }
@@ -232,7 +245,8 @@ module.exports = function () {
           return;
         }
 
-        caseidList.forEach(id => api.updateCaseTypeToAutomatedIfNecessary(id));
+        this.getPlanID(api);
+        if (this.PlanID === 0) return;
 
         const AgentDetails = this.agents[0].split('/');
         const rundetails = {
@@ -258,7 +272,7 @@ module.exports = function () {
               if (err1 !== null) {
                 that.newline().write(that.chalk.blue('---------Error at Add result -----')).newline().write(err1);
               } else if (results.length === 0) {
-                that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline().write(err1);
+                that.newline().write(that.chalk.red('No Data has been published to Testrail.')).newline();
               } else {
                 that.newline().write('------------------------------------------------------').newline().write(that.chalk.green.bold(that.symbols.ok)).write(that.chalk.green('Result added to the testrail Successfully')).newline();
               }
@@ -341,12 +355,13 @@ module.exports = function () {
       const that = this;
 
       return api.getSuites(this.ProjectID, function (err, response, suites) {
-        if (err !== 'null') {
-          if (suites.length === 0) {
-            that.newline().write(that.chalk.red('The project doesnt contain any suite'));
+        if (err === null) {
+          const existingSuite = suites.filter(suite => suite.name === that.SuiteName)[0];
+          if (typeof existingSuite === 'undefined') {
+            that.newline().write(that.chalk.red('The project doesnt contain suite:')).write(that.SuiteName).newline();
             that.SuiteID = 0;
           } else {
-            const id = suites[0].id;
+            const id = existingSuite.id;
             that.newline().write(that.chalk.blue.bold('Suite name(id) ')).write(that.chalk.yellow(suites[0].name + '(' + id + ')'));
             that.SuiteID = id;
           }
@@ -383,14 +398,18 @@ module.exports = function () {
       const that = this;
       const caseData = {
         title:                  testCase.title,
-        type_id:                api.CONSTANTS.TYPE_AUTOMATED,
+        type_id:                that.getTestcaseTypeId(api),
         priority_id:            api.CONSTANTS.PRIORITY_MEDIUM,
         template_id:            api.CONSTANTS.TEMPLATE_STEPS,
-        custom_steps_separated: testCase.steps
+        refs:                   testCase.refs,
+        custom_steps_separated: testCase.steps,
+        custom_browser:         testCase.browser,
+        custom_testobjective:   testCase.test_objective,
+        custom_preconds:        testCase.preconditions
       };
 
       if (typeof testCase.id !== 'undefined') {
-        return api.updateCase(testCase.id, caseData, callback);
+        return this.UpdateTestCases ? api.updateCase(testCase.id, caseData, callback) : callback(null, null, testCase);
       }
 
       return api.getCases(this.ProjectID, { suite_id: this.SuiteID, section_id: sectionId }, function (err, response, result) {
@@ -402,9 +421,24 @@ module.exports = function () {
           if (typeof existingTestCase === 'undefined') {
             return api.addCase(sectionId, caseData, callback);
           }
-          return api.updateCase(existingTestCase.id, caseData, callback);
+          if (that.UpdateTestCases) {
+            return api.updateCase(existingTestCase.id, caseData, callback);
+          }
+          return callback(null, null, existingTestCase);
         }
       });
+    },
+
+    getTestcaseTypeId: function getTestcaseTypeId (api) {
+      const defaultTypeId = api.CONSTANTS.TYPE_FUNCTIONAL;
+      if (!this.TestcaseType) {
+        return defaultTypeId;
+      }
+      const typeId = api.CONSTANTS[`TYPE_${this.TestcaseType.toUpperCase()}`];
+      if (typeof typeId === 'undefined') {
+        return defaultTypeId;
+      }
+      return typeId;
     },
 
     updateResultsWithCaseId: function updateResultsWithCaseId (results, caseDesc, caseId) {
